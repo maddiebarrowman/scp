@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { NavLink, Route, Routes } from 'react-router-dom';
 import MyClass from './components/MyClass';
@@ -5,32 +6,38 @@ import SCPDetails from './components/SCPDetails';
 import CreatePage from './components/CreatePage';
 import EditPage from './components/EditPage';
 import './App.css';
+import { initializeApp } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
+
+
 
 function App() {
-  const [scps, setScps] = useState(() => {
-    const storedScps = JSON.parse(localStorage.getItem('scps'));
+  initializeApp()
+const db = getFirestore()
+const readScps = async () => {
+  const storedScps = await db.collection('scps').get();
     return storedScps || [
       { id: 'SCP-002', item: 'SCP-002', class: 'Euclid', containment: 'Containment procedures...', description: 'Description of SCP-002', image: null },
       { id: 'SCP-003', item: 'SCP-003', class: 'Euclid', containment: 'Containment procedures...', description: 'Description of SCP-003', image: null },
       { id: 'SCP-004', item: 'SCP-004', class: 'Euclid', containment: 'Containment procedures...', description: 'Description of SCP-004', image: null },
       { id: 'SCP-005', item: 'SCP-005', class: 'Safe', containment: 'Containment procedures...', description: 'Description of SCP-005', image: null },
     ];
-  });
+  };
+  const [scps, setScps] = useState(readScps());
 
-  useEffect(() => {
-    localStorage.setItem('scps', JSON.stringify(scps));
-  }, [scps]);
+  
 
-  const addSCP = (newScp) => {
-    setScps([...scps, newScp]);
+  const addSCP = async (newScp) => {
+    await db.collection('scps').doc(newScp.id).set(newScp);
+    setScps(readScps());
   };
 
-  const updateSCP = (updatedScp) => {
+  const updateSCP = async (updatedScp) => {
     const updatedScps = scps.map(scp => (scp.id === updatedScp.id ? updatedScp : scp));
     setScps(updatedScps);
   };
 
-  const deleteSCP = (id) => {
+  const deleteSCP = async (id) => {
     const updatedScps = scps.filter(scp => scp.id !== id);
     setScps(updatedScps);
   };
@@ -62,3 +69,4 @@ function App() {
   );
 }
 
+export default App;
