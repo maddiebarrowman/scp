@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { NavLink, Route, Routes } from 'react-router-dom';
 import MyClass from './components/MyClass';
@@ -6,42 +5,52 @@ import SCPDetails from './components/SCPDetails';
 import CreatePage from './components/CreatePage';
 import EditPage from './components/EditPage';
 import './App.css';
-import { initializeApp } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
-
-
-
+import { initializeApp } from 'firebase/app';
+import { getFirestore, collection, doc, getDoc, setDoc, getDocs, updateDoc, deleteDoc } from 'firebase/firestore';
+ 
 function App() {
-  initializeApp()
-const db = getFirestore()
+ 
+  const firebaseConfig = {
+    apiKey: "AIzaSyAGJR9etYS-KPwLaR7GAGcpN5bqxOyuMSg",
+    authDomain: "test-903e0.firebaseapp.com",
+    projectId: "test-903e0",
+    storageBucket: "test-903e0.appspot.com",
+    messagingSenderId: "173694762913",
+    appId: "1:173694762913:web:0cd23e5a198f8e77e695e0"
+  };
+ 
+  initializeApp(firebaseConfig);
+const db = getFirestore();
 const readScps = async () => {
-  const storedScps = await db.collection('scps').get();
-    return storedScps || [
+  const storedScps = [];
+  (await getDocs(collection(db, 'scps'))).forEach((doc) => storedScps.push(doc.data()));
+  console.log(storedScps);
+    return storedScps.length ? storedScps : [
       { id: 'SCP-002', item: 'SCP-002', class: 'Euclid', containment: 'Containment procedures...', description: 'Description of SCP-002', image: null },
       { id: 'SCP-003', item: 'SCP-003', class: 'Euclid', containment: 'Containment procedures...', description: 'Description of SCP-003', image: null },
       { id: 'SCP-004', item: 'SCP-004', class: 'Euclid', containment: 'Containment procedures...', description: 'Description of SCP-004', image: null },
       { id: 'SCP-005', item: 'SCP-005', class: 'Safe', containment: 'Containment procedures...', description: 'Description of SCP-005', image: null },
     ];
   };
-  const [scps, setScps] = useState(readScps());
-
-  
-
+  const [scps, setScps] = useState([]);
+ 
+  (async () => setScps(await readScps()))();
+ 
   const addSCP = async (newScp) => {
-    await db.collection('scps').doc(newScp.id).set(newScp);
-    setScps(readScps());
+    await setDoc(doc(db,'scps',newScp.id),newScp);
+    setScps(await readScps());
   };
-
+ 
   const updateSCP = async (updatedScp) => {
-    const updatedScps = scps.map(scp => (scp.id === updatedScp.id ? updatedScp : scp));
-    setScps(updatedScps);
+    await updateDoc(doc(db,'scps',updatedScp.id),updatedScp);
+    setScps(await readScps());
   };
-
+ 
   const deleteSCP = async (id) => {
-    const updatedScps = scps.filter(scp => scp.id !== id);
-    setScps(updatedScps);
+    await deleteDoc(doc(db,'scps',id));
+    setScps(await readScps());
   };
-
+ 
   return (
     <div className="app-container">
       <nav className="navbar top-navbar">
@@ -68,5 +77,5 @@ const readScps = async () => {
     </div>
   );
 }
-
+ 
 export default App;
