@@ -7,9 +7,8 @@ import EditPage from './components/EditPage';
 import './App.css';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, doc, getDoc, setDoc, getDocs, updateDoc, deleteDoc } from 'firebase/firestore';
- 
+
 function App() {
- 
   const firebaseConfig = {
     apiKey: "AIzaSyAGJR9etYS-KPwLaR7GAGcpN5bqxOyuMSg",
     authDomain: "test-903e0.firebaseapp.com",
@@ -18,13 +17,19 @@ function App() {
     messagingSenderId: "173694762913",
     appId: "1:173694762913:web:0cd23e5a198f8e77e695e0"
   };
- 
-  initializeApp(firebaseConfig);
-const db = getFirestore();
-const readScps = async () => {
-  const storedScps = [];
-  (await getDocs(collection(db, 'scps'))).forEach((doc) => storedScps.push(doc.data()));
-  console.log(storedScps);
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const [scps, setScps] = useState([]);
+
+  const readScps = async () => {
+    const storedScps = [];
+    const querySnapshot = await getDocs(collection(db, 'scps'));
+    querySnapshot.forEach((doc) => {
+      storedScps.push({ id: doc.id, ...doc.data() });
+    });
     return storedScps.length ? storedScps : [
       { id: 'SCP-002', item: 'SCP-002', class: 'Euclid', containment: 'Containment procedures...', description: 'Description of SCP-002', image: null },
       { id: 'SCP-003', item: 'SCP-003', class: 'Euclid', containment: 'Containment procedures...', description: 'Description of SCP-003', image: null },
@@ -32,25 +37,41 @@ const readScps = async () => {
       { id: 'SCP-005', item: 'SCP-005', class: 'Safe', containment: 'Containment procedures...', description: 'Description of SCP-005', image: null },
     ];
   };
-  const [scps, setScps] = useState([]);
- 
-  (async () => setScps(await readScps()))();
- 
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const scpsData = await readScps();
+      setScps(scpsData);
+    };
+    fetchData();
+  }, []);
+
   const addSCP = async (newScp) => {
-    await setDoc(doc(db,'scps',newScp.id),newScp);
-    setScps(await readScps());
+    await setDoc(doc(db, 'scps', newScp.id), newScp);
+    const scpsData = await readScps();
+    setScps(scpsData);
   };
- 
+
   const updateSCP = async (updatedScp) => {
-    await updateDoc(doc(db,'scps',updatedScp.id),updatedScp);
-    setScps(await readScps());
+    const scpRef = doc(db, 'scps', updatedScp.id);
+    const docSnapshot = await getDoc(scpRef);
+
+    if (docSnapshot.exists()) {
+      await updateDoc(scpRef, updatedScp);
+    } else {
+      await setDoc(scpRef, updatedScp); // This will create the document if it does not exist
+    }
+
+    const scpsData = await readScps();
+    setScps(scpsData);
   };
- 
+
   const deleteSCP = async (id) => {
-    await deleteDoc(doc(db,'scps',id));
-    setScps(await readScps());
+    await deleteDoc(doc(db, 'scps', id));
+    const scpsData = await readScps();
+    setScps(scpsData);
   };
- 
+
   return (
     <div className="app-container">
       <nav className="navbar top-navbar">
@@ -77,5 +98,5 @@ const readScps = async () => {
     </div>
   );
 }
- 
+
 export default App;
